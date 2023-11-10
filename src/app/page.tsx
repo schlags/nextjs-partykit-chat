@@ -29,7 +29,7 @@ function Message({ message }: { key: string, message: ChatMessage }) {
         <p className="text-black">{message.message}</p>
       </div>
       {/* time stamp */}
-      <div className="text-xs font-small text-slate-200">{message.time.toLocaleTimeString()}</div>
+      <div className="text-xs font-small text-slate-300">{message.time.toLocaleTimeString()}</div>
     </div>
   )
 }
@@ -56,7 +56,7 @@ function DisplayServerMessages( { messages }: { messages: string[] } ) {
   return (
     messages.map((message) => {
       return (
-        <div key={uuid()} className="bg-gray-100 rounded-lg p-2">
+        <div key={uuid()} className="bg-slate-300 rounded-lg p-2">
           <p className="text-gray-800">{message}</p>
         </div>
       );
@@ -76,12 +76,15 @@ function ConnectionPing() {
 
 function ShowConnectionStatus( { status }: { status: ConnectionStatus } ) {
   return (
-    <span className="relative inline-flex justify-center">
-      <span className="inline-flex items-center px-4 py-2 font-semibold leading-6 text-sm shadow rounded-md text-sky-500 bg-white dark:bg-slate-800 transition ease-in-out cursor-default duration-150 ring-1 ring-slate-900/10 dark:ring-slate-200/20">
-        {status.status} {status.userName ? `as ${status.userName}` : null}
+    <div className="flex flex-row justify-center items-center space-x-2">
+      <div className="text-2xl font-semibold text-slate-500">Welcome to the chat!</div>
+      <span className="relative inline-flex justify-center">
+        <span className="inline-flex items-center px-4 py-2 font-semibold leading-6 text-sm shadow rounded-md text-sky-500 bg-white dark:bg-slate-800 transition ease-in-out cursor-default duration-150 ring-1 ring-slate-900/10 dark:ring-slate-200/20">
+          {status.status}
+        </span>
+        {status.status === "Connected" ? <ConnectionPing /> : null}
       </span>
-      {status.status === "Connected" ? <ConnectionPing /> : null}
-    </span>
+    </div>
   )
 
 }
@@ -142,17 +145,17 @@ export default function Home() {
 
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
+    <main className="flex min-h-screen flex-col items-center justify-between p-14">
+      <ShowConnectionStatus status={connectionStatus} />
 
 
-      <h2 className="text-lg font-bold mb-4">Messages:</h2>
-      <div className="bg-white rounded-lg shadow-lg p-4 h-36 w-96 overflow-y-scroll">
+      <div className="bg-slate-400 rounded-lg shadow-lg p-4 h-36 w-96 overflow-y-scroll">
         <div className="space-y-2">
           <DisplayServerMessages messages={serverMessages} />
         </div>
       </div>
       {/* Divider */}
-      <div className="border-t-2 border-teal-200 my-2 w-96"></div>
+      <div className="border-t border-teal-100 my-1 w-96"></div>
 
       <div className="bg-white rounded-lg shadow-lg p-4 h-96 w-96 overflow-y-scroll">
         <div className="space-y-2">
@@ -162,7 +165,6 @@ export default function Home() {
       </div>
 
       <form className="w-full flex max-w-sm" onSubmit={handleMessageSend}>
-      <ShowConnectionStatus status={connectionStatus} />
         <div className="flex items-center border-b border-blue-500 py-2">
           <input className="appearance-none bg-transparent border-none w-full text-white-700 mr-3 py-1 px-2 leading-tight focus:outline-none" type="text" placeholder="What's on your mind?" value={inputMessage} onChange={handleInputMessageChange}/>
           <button className="flex-shrink-0 bg-blue-500 hover:bg-teal-700 border-blue-500 hover:border-blue-700 text-sm border-4 text-white py-1 px-2 rounded" type="button">
