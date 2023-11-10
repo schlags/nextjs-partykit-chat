@@ -95,7 +95,7 @@ export default function Home() {
 
 
   const ws = usePartySocket({
-    host: "localhost:1999",
+    host: `${process.env.NEXT_PUBLIC_PARTYSOCKET_HOST || "localhost"}:${process.env.NEXT_PUBLIC_PARTYSOCKET_PORT || 1999}`,
     room: "tic-tac-toe",
     id: userName,
 
