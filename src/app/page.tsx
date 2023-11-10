@@ -28,16 +28,16 @@ interface ConnectionStatus {
 function Message({ message }: { key: string, message: ChatMessage }) {
   const userAvatar = `https://api.dicebear.com/7.x/pixel-art/svg?seed=${message.user}&background=%23fff&radius=50&margin=10`
   return (
-    <div className="p-6 max-w-sm mx-auto bg-white rounded-xl shadow-md flex items-center space-x-4">
+    <div className="p-2 max-w-sm mx-auto gap-2 bg-white content-start rounded-s border-t shadow-md flex items-center space-x-2">
     <div className="shrink-0">
       <img className="h-12 w-12" src={userAvatar} alt="User's avatar" />
     </div>
       <div>
         {/* <div className="text-xs font-medium text-slate-500">{message.user}</div> */}
-        <p className="text-black">{message.message}</p>
+        <p className="text-black text-sm">{message.message}</p>
       </div>
       {/* time stamp */}
-      <div className="text-xs font-small text-slate-300">{message.time.toLocaleTimeString()}</div>
+      <div className="text-xs font-small text-slate-300 align-right">{message.time.toLocaleTimeString()}</div>
     </div>
   )
 }
@@ -86,7 +86,7 @@ function DisplayMessages( { messages }: { messages: ChatMessage[] } ) {
 
   useEffect(() => {scrollToBottom()}, [messages]);
   return (
-    <div>
+    <div className="content-evenly hover:content-stretch">
       {messages.map(message => <Message key={uuid()} message={message} />)}
       <div ref={messagesEndRef} />
     </div>
@@ -101,6 +101,12 @@ function DisplayServerMessages( { messages }: { messages: ServerMessage[] } ) {
 
 }
 
+function DisplayUsersPresent( { users }: { users: string[] } ) {
+  return (
+    users.map((user) => <div className="h-12 w-12" key={uuid()}><ConnectionPing /><img src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${user}&background=%23fff&radius=50&margin=10`}></img></div>)
+  );
+}
+
 function ConnectionPing() {
   return (
     <span className="relative flex h-3 w-3 top-0 right-0">
@@ -112,8 +118,7 @@ function ConnectionPing() {
 
 function ShowConnectionStatus( { status }: { status: ConnectionStatus } ) {
   return (
-    <div className="flex flex-row justify-center items-center space-x-2">
-      <div className="text-2xl font-semibold text-slate-500">Welcome to the chat!</div>
+    <div className="flex flex-row justify-center items-center">
       <span className="relative inline-flex justify-center">
         <span className="inline-flex items-center px-4 py-2 font-semibold leading-6 text-sm shadow rounded-md text-sky-500 bg-white dark:bg-slate-800 transition ease-in-out cursor-default duration-150 ring-1 ring-slate-900/10 dark:ring-slate-200/20">
           {status.status}
@@ -129,6 +134,7 @@ export default function Home() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [serverMessages, setServerMessages] = useState<ServerMessage[]>([]);
   const [latestServerMessage, setLatestServerMessage] = useState<ServerMessage>({user: "", time: new Date(Date.now()), changeReason: "", connections: 0});
+  const [peoplePresent, setPeoplePresent] = useState<string[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({status: "Disconnected"});
   const [inputMessage, setInputMessage] = useState<string>("");
   const [userName, setUserName] = useState<string>("");
@@ -153,6 +159,11 @@ export default function Home() {
           const serverMessage: ServerMessage = {time: new Date(Date.now()), ...parsedMessage};
           setServerMessages([serverMessage, ...serverMessages]);
           setLatestServerMessage(serverMessage);
+          if (serverMessage.changeReason === "connected") {
+            setPeoplePresent([...peoplePresent, serverMessage.user]);
+          } else if (serverMessage.changeReason === "left") {
+            setPeoplePresent(peoplePresent.filter((person) => person !== serverMessage.user));
+          }
           return;
         } else if (parsedMessage!.message) {
           const chatMessage: ChatMessage = {time: new Date(Date.now()), ...parsedMessage};
@@ -196,22 +207,23 @@ export default function Home() {
       <ShowConnectionStatus status={connectionStatus} />
 
 
-      <div className="bg-slate-400 rounded-lg shadow-lg p-4 h-24 w-96 overflow-y-scroll">
-        <div className="space-y-2">
-          <DisplayServerMessages messages={serverMessages} />
+
+      <div className="bg-slate-400 rounded-lg shadow-lg p-4 space-x-4 h-24 w-96 overflow-x-auto">
+        <div className="flex items-center">
+          <DisplayUsersPresent users={peoplePresent} />
         </div>
       </div>
       {/* Divider */}
       <div className="border-t border-teal-100 my-1 w-96"></div>
 
-      <div className="bg-white rounded-lg shadow-lg p-4 h-96 w-96 overflow-y-scroll">
-        <div className="space-y-2">
+      <div className="bg-gray-100 rounded-lg shadow-lg p-4 h-96 w-96 overflow-y-scroll">
+        <div>
           <DisplayMessages messages={chatMessages} />
-          <div id="bottom-of-messages" style={{ float:"left", clear: "both" }} /> {/* this is a hack to make the div scroll to the bottom */}
+          <div id="bottom-of-messages" style={{ float: "left", clear: "both" }} />
         </div>
       </div>
 
-      <form className="w-full flex max-w-sm" onSubmit={handleMessageSend}>
+      <form className="w-full justify-center flex" onSubmit={handleMessageSend}>
         <div className="flex items-center border-b border-blue-500 py-2">
           <input className="appearance-none bg-transparent border-none w-full text-white-700 mr-3 py-1 px-2 leading-tight focus:outline-none" type="text" placeholder="What's on your mind?" value={inputMessage} onChange={handleInputMessageChange}/>
           <div className="flex-shrink-0 border-t text-xs text-white py-1 px-2 ">
