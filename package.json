@@ -10,6 +10,7 @@
     "partykit": "partykit dev"
   },
   "dependencies": {
+    "@vercel/analytics": "^1.1.1",
     "next": "14.0.2",
     "partysocket": "^0.0.14",
     "react": "^18",
