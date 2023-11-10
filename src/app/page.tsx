@@ -103,7 +103,7 @@ function DisplayServerMessages( { messages }: { messages: ServerMessage[] } ) {
 
 function DisplayUsersPresent( { users }: { users: string[] } ) {
   return (
-    users.map((user) => <div className="h-12 w-12" key={uuid()}><ConnectionPing /><img src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${user}&background=%23fff&radius=50&margin=10`}></img></div>)
+    Array.from(users).map((user) => <div className="h-12 w-12" key={uuid()}><ConnectionPing /><img src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${user}&background=%23fff&radius=50&margin=10`}></img></div>)
   );
 }
 
@@ -134,10 +134,28 @@ export default function Home() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [serverMessages, setServerMessages] = useState<ServerMessage[]>([]);
   const [latestServerMessage, setLatestServerMessage] = useState<ServerMessage>({user: "", time: new Date(Date.now()), changeReason: "", connections: 0});
-  const [peoplePresent, setPeoplePresent] = useState<string[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({status: "Disconnected"});
   const [inputMessage, setInputMessage] = useState<string>("");
   const [userName, setUserName] = useState<string>("");
+  const [peoplePresent, setPeoplePresent] = useState<Set<string>>(new Set());
+
+  // Function to add a person to the set
+  const addPerson = (person: string) => {
+    setPeoplePresent(prevPeople => new Set([...prevPeople, person]));
+  };
+  
+  // Function to remove a person from the set
+  const removePerson = (person: string) => {
+    setPeoplePresent(prevPeople => {
+      const newPeople = new Set(prevPeople);
+      newPeople.delete(person);
+      return newPeople;
+    });
+  };
+  
+  // Convert Set to Array for rendering or other purposes
+  const peoplePresentArray = Array.from<string>(peoplePresent);
+  
 
 
   const ws = usePartySocket({
@@ -160,9 +178,9 @@ export default function Home() {
           setServerMessages([serverMessage, ...serverMessages]);
           setLatestServerMessage(serverMessage);
           if (serverMessage.changeReason === "connected") {
-            setPeoplePresent([...peoplePresent, serverMessage.user]);
+            addPerson(serverMessage.user);
           } else if (serverMessage.changeReason === "left") {
-            setPeoplePresent(peoplePresent.filter((person) => person !== serverMessage.user));
+            removePerson(serverMessage.user);
           }
           return;
         } else if (parsedMessage!.message) {
