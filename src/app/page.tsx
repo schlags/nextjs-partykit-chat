@@ -5,11 +5,19 @@ import React from "react";
 import usePartySocket from "partysocket/react";
 import { useState, useEffect, useRef } from "react";
 import uuid from "react-uuid";
+import { parse } from "path";
 
 interface ChatMessage {
   user: string;
   message: string;
   time: Date;
+}
+
+interface ServerMessage {
+  user: string;
+  time: Date;
+  changeReason: string;
+  connections: number;
 }
 
 interface ConnectionStatus {
@@ -25,7 +33,7 @@ function Message({ message }: { key: string, message: ChatMessage }) {
       <img className="h-12 w-12" src={userAvatar} alt="User's avatar" />
     </div>
       <div>
-        <div className="text-xs font-medium text-slate-500">{message.user}</div>
+        {/* <div className="text-xs font-medium text-slate-500">{message.user}</div> */}
         <p className="text-black">{message.message}</p>
       </div>
       {/* time stamp */}
@@ -33,6 +41,39 @@ function Message({ message }: { key: string, message: ChatMessage }) {
     </div>
   )
 }
+
+function ServerMessage({ message }: { key: string; message: ServerMessage }) {
+  const userAvatar = `https://api.dicebear.com/7.x/pixel-art/svg?seed=${message.user}&background=%23fff&radius=50&margin=10`;
+
+  return (
+    <div key={uuid()} className="bg-gray-100 rounded-lg p-1 flex items-center justify-between">
+      <div className="flex items-center space-x-2">
+        <div className="flex-shrink-0">
+          <img
+            src={userAvatar}
+            alt="User's avatar"
+            width="20"
+            height="20"
+            className="rounded-full h-10 w-10 object-cover"
+          />
+        </div>
+        <p className="text-gray-800 font-bold h-50">has {message.changeReason}!</p>
+      </div>
+      <p className="text-gray-500 text-sm">{message.time.toLocaleTimeString()}</p>
+    </div>
+  );
+}
+
+function ActiveConnectionsStatus({ message }: { message?: ServerMessage }) {
+  return (
+    <div className="flex justify-center items-center space-x-2 ">
+      <div className="text-sm text-slate-500">People Here:</div>
+      <div className="text-sm font-bold text-lime-500 animate-pulse accent-green">{message?.connections || 0}</div>
+    </div>
+  );
+}
+
+
 
 function DisplayMessages( { messages }: { messages: ChatMessage[] } ) {
   const messagesEndRef = useRef<null | HTMLDivElement>(null)
@@ -52,15 +93,10 @@ function DisplayMessages( { messages }: { messages: ChatMessage[] } ) {
   );
 }
 
-function DisplayServerMessages( { messages }: { messages: string[] } ) {
+function DisplayServerMessages( { messages }: { messages: ServerMessage[] } ) {
+  console.log(messages);
   return (
-    messages.map((message) => {
-      return (
-        <div key={uuid()} className="bg-slate-300 rounded-lg p-2">
-          <p className="text-gray-800">{message}</p>
-        </div>
-      );
-    })
+    messages.map((message) => <ServerMessage key={uuid()} message={message} />)
   );
 
 }
@@ -91,7 +127,8 @@ function ShowConnectionStatus( { status }: { status: ConnectionStatus } ) {
 
 export default function Home() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [serverMessages, setServerMessages] = useState<string[]>([]);
+  const [serverMessages, setServerMessages] = useState<ServerMessage[]>([]);
+  const [latestServerMessage, setLatestServerMessage] = useState<ServerMessage>({user: "", time: new Date(Date.now()), changeReason: "", connections: 0});
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({status: "Disconnected"});
   const [inputMessage, setInputMessage] = useState<string>("");
   const [userName, setUserName] = useState<string>("");
@@ -108,13 +145,22 @@ export default function Home() {
     },
     onMessage(message) {
       console.log("Message:", message.data)
-      // if message data is json and can be aligned to ChatMessage, then add to chatMessages
-      // else add to serverMessages
+      let parsedMessage: any;
       try {
-        const chatMessage: ChatMessage = {time: new Date(Date.now()), ...JSON.parse(message.data)};
-        setChatMessages([...chatMessages, chatMessage]);
+        parsedMessage = JSON.parse(message.data);
+
+        if (parsedMessage!.changeReason) {
+          const serverMessage: ServerMessage = {time: new Date(Date.now()), ...parsedMessage};
+          setServerMessages([serverMessage, ...serverMessages]);
+          setLatestServerMessage(serverMessage);
+          return;
+        } else if (parsedMessage!.message) {
+          const chatMessage: ChatMessage = {time: new Date(Date.now()), ...parsedMessage};
+          setChatMessages([...chatMessages, chatMessage]);
+          return;
+        }
       } catch (e) {
-        setServerMessages([message.data, ...serverMessages]);
+        console.log("Error parsing message:", e);
       }
     },
     onClose() {
@@ -150,7 +196,7 @@ export default function Home() {
       <ShowConnectionStatus status={connectionStatus} />
 
 
-      <div className="bg-slate-400 rounded-lg shadow-lg p-4 h-36 w-96 overflow-y-scroll">
+      <div className="bg-slate-400 rounded-lg shadow-lg p-4 h-24 w-96 overflow-y-scroll">
         <div className="space-y-2">
           <DisplayServerMessages messages={serverMessages} />
         </div>
@@ -173,6 +219,7 @@ export default function Home() {
           </div>
         </div>
       </form>
+      <div className="flex flex-row justify-center items-center space-x-2"><ActiveConnectionsStatus message={latestServerMessage}/></div>
     </main>
   )
 }
