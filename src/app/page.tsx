@@ -93,19 +93,32 @@ function DisplayMessages( { messages }: { messages: ChatMessage[] } ) {
   );
 }
 
-function DisplayUsersPresent( { users }: { users: string[] } ) {
+function DisplayUsersPresent( { users, ws }: { users: string[], ws: PartySocket } ) {
+  const currentUser = ws.id || "";
+  console.log("Current user:", currentUser);
+        // let ping = <ConnectionPing color="green"/>
+      // if (user === currentUser) {
+      //   ping = <ConnectionPing color="indigo" text="YOU" />
+      // }
   return (
-    Array.from(users).map((user) => <div className="h-12 w-12" key={uuid()}><ConnectionPing /><img src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${user}&background=%23fff&radius=50&margin=10`}></img></div>)
-  );
+    users.map((user) => (
+      <div className="h-12 w-12" key={uuid()}>
+        {user === currentUser ? ( <ConnectionPing text="YOU!" color="notvalid" />) : ( <ConnectionPing color="green" /> )}
+        <img src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${user}&background=%23fff&radius=50&margin=10`}></img></div>)
+      )
+    );
 }
 
-function ConnectionPing() {
+function ConnectionPing({ color = "green", text = "" }: { color?: string; text?: string }) {
   return (
-    <span className="relative flex h-3 w-3 top-0 right-0">
-      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-      <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-  </span>
-  )
+    <div className="text-xs font-bold text-slate-500 text-center">
+      <span className="relative flex h-3 w-3 top-0 right-0">{text}
+        <span className={`animate-ping absolute inline-flex h-full w-full rounded-full bg-${color}-400 opacity-75`}></span>
+        <span className={`relative inline-flex rounded-full h-3 w-3 bg-${color}-500`}>
+        </span>
+      </span>
+    </div>
+  );
 }
 
 function ShowConnectionStatus( { status }: { status: ConnectionStatus } ) {
@@ -147,7 +160,6 @@ export default function Home() {
     fetchData();
   }, []); // The empty dependency array means this effect runs once when the component mounts
 
-
   // Function to add a person to the set
   const addPerson = (person: string) => {
     setPeoplePresent(prevPeople => new Set([...prevPeople, person]));
@@ -162,16 +174,15 @@ export default function Home() {
     });
   };
 
-
+  const randomUserID = uuid();
 
   const ws = usePartySocket({
     host: PARTYKIT_HOST,
     room: "tic-tac-toe",
-    id: userName,
 
     onOpen() {
       console.log("Connected!")
-      setConnectionStatus({status: "Connected", userName: userName})
+      setConnectionStatus({status: "Connected"})
     },
     onMessage(message) {
       console.log("Message:", message.data)
@@ -236,7 +247,7 @@ export default function Home() {
 
       <div className="bg-slate-400 rounded-lg shadow-lg p-4 space-x-4 h-24 w-96 overflow-x-auto">
         <div className="flex items-center">
-          <DisplayUsersPresent users={Array.from(peoplePresent)} />
+          <DisplayUsersPresent users={Array.from(peoplePresent)} ws={ws} />
         </div>
       </div>
       {/* Divider */}
