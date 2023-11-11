@@ -236,7 +236,7 @@ export default function Home() {
 
       <div className="bg-slate-400 rounded-lg shadow-lg p-4 space-x-4 h-24 w-96 overflow-x-auto">
         <div className="flex items-center">
-          <DisplayUsersPresent users={peoplePresent} />
+          <DisplayUsersPresent users={Array.from(peoplePresent)} />
         </div>
       </div>
       {/* Divider */}
