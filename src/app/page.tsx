@@ -2,10 +2,10 @@
 
 
 import React from "react";
-import usePartySocket from "partysocket/react";
+import { usePartySocket } from "partysocket/react";
 import { useState, useEffect, useRef } from "react";
 import uuid from "react-uuid";
-import { parse } from "path";
+import PartySocket from "partysocket";
 
 interface ChatMessage {
   user: string;
@@ -93,14 +93,6 @@ function DisplayMessages( { messages }: { messages: ChatMessage[] } ) {
   );
 }
 
-function DisplayServerMessages( { messages }: { messages: ServerMessage[] } ) {
-  console.log(messages);
-  return (
-    messages.map((message) => <ServerMessage key={uuid()} message={message} />)
-  );
-
-}
-
 function DisplayUsersPresent( { users }: { users: string[] } ) {
   return (
     Array.from(users).map((user) => <div className="h-12 w-12" key={uuid()}><ConnectionPing /><img src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${user}&background=%23fff&radius=50&margin=10`}></img></div>)
@@ -139,11 +131,28 @@ export default function Home() {
   const [userName, setUserName] = useState<string>("");
   const [peoplePresent, setPeoplePresent] = useState<Set<string>>(new Set());
 
+  const PARTYKIT_HOST = `${process.env.NEXT_PUBLIC_PARTYSOCKET_HOST || "localhost:1999"}`;
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await PartySocket.fetch({'host': PARTYKIT_HOST, 'room': "tic-tac-toe"}, {'method': 'GET'});
+        const peopleData: string[] = await response.json();
+        setPeoplePresent(new Set(peopleData));
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+
+    fetchData();
+  }, []); // The empty dependency array means this effect runs once when the component mounts
+
+
   // Function to add a person to the set
   const addPerson = (person: string) => {
     setPeoplePresent(prevPeople => new Set([...prevPeople, person]));
   };
-  
+
   // Function to remove a person from the set
   const removePerson = (person: string) => {
     setPeoplePresent(prevPeople => {
@@ -152,14 +161,11 @@ export default function Home() {
       return newPeople;
     });
   };
-  
-  // Convert Set to Array for rendering or other purposes
-  const peoplePresentArray = Array.from<string>(peoplePresent);
-  
+
 
 
   const ws = usePartySocket({
-    host: `${process.env.NEXT_PUBLIC_PARTYSOCKET_HOST || "localhost:1999"}`,
+    host: PARTYKIT_HOST,
     room: "tic-tac-toe",
     id: userName,
 
@@ -201,6 +207,8 @@ export default function Home() {
       setConnectionStatus({status: `Error`})
     }
   });
+
+
 
 
   const handleInputMessageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
