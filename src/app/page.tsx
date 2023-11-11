@@ -96,14 +96,10 @@ function DisplayMessages( { messages }: { messages: ChatMessage[] } ) {
 function DisplayUsersPresent( { users, ws }: { users: string[], ws: PartySocket } ) {
   const currentUser = ws.id || "";
   console.log("Current user:", currentUser);
-        // let ping = <ConnectionPing color="green"/>
-      // if (user === currentUser) {
-      //   ping = <ConnectionPing color="indigo" text="YOU" />
-      // }
   return (
     users.map((user) => (
       <div className="h-12 w-12" key={uuid()}>
-        {user === currentUser ? ( <ConnectionPing text="YOU!" color="notvalid" />) : ( <ConnectionPing color="green" /> )}
+        {user === currentUser ? ( <ConnectionPing text="YOU!" color="green" />) : ( <ConnectionPing color="green" /> )}
         <img src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${user}&background=%23fff&radius=50&margin=10`}></img></div>)
       )
     );
@@ -113,8 +109,8 @@ function ConnectionPing({ color = "green", text = "" }: { color?: string; text?:
   return (
     <div className="text-xs font-bold text-slate-500 text-center">
       <span className="relative flex h-3 w-3 top-0 right-0">{text}
-        <span className={`animate-ping absolute inline-flex h-full w-full rounded-full bg-${color}-400 opacity-75`}></span>
-        <span className={`relative inline-flex rounded-full h-3 w-3 bg-${color}-500`}>
+        <span className={`animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75`}></span>
+        <span className={`relative inline-flex rounded-full h-3 w-3 bg-green-500`}>
         </span>
       </span>
     </div>
